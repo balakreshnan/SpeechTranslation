@@ -45,12 +45,13 @@ def translateaudio(option1, option2, audio_bytes, option3):
     audio_config = speechsdk.audio.AudioConfig(filename="temp1.wav")
     translation_recognizer = speechsdk.translation.TranslationRecognizer(translation_config=speech_translation_config, audio_config=audio_config)
 
-    print("Speak into your microphone.")
+    #print("Speak into your microphone.")
+    print("Processing .....")
     translation_recognition_result = translation_recognizer.recognize_once_async().get()
 
     if translation_recognition_result.reason == speechsdk.ResultReason.TranslatedSpeech:
-        print("Recognized: {}".format(translation_recognition_result.text))
-        print("""Translated into '{}': {}""".format(
+        print("Recognized: {} \n".format(translation_recognition_result.text))
+        print("""Translated into '{}': {} \n""".format(
             target_language, 
             translation_recognition_result.translations[target_language]))
         #rttext = translation_recognition_result.text
@@ -77,15 +78,17 @@ def translateaudio(option1, option2, audio_bytes, option3):
         stream_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)
         speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=stream_config)
         
-        speech_synthesis_result = speech_synthesizer.speak_text_async(rttext).get()
+        #speech_synthesis_result = speech_synthesizer.speak_text_async(rttext).get()
+        speech_synthesis_result = speech_synthesizer.speak_text(rttext)
 
         #rsstream = speechsdk.AudioDataStream(speech_synthesis_result)
         rsstream = speech_synthesis_result.audio_data
+        print("Audio duration: {} seconds \n".format(speech_synthesis_result.audio_duration.total_seconds()))
         #rsstream = speechsdk.AudioDataStream(speech_synthesis_result)
        
 
         if speech_synthesis_result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            print("Speech synthesized for text [{}]".format(rttext))
+            print("Speech synthesized for text [{}] \n".format(rttext))
         elif speech_synthesis_result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = speech_synthesis_result.cancellation_details
             print("Speech synthesis canceled: {}".format(cancellation_details.reason))
@@ -95,6 +98,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
                     print("Did you set the speech resource key and region values?")
     elif translation_recognition_result.reason == speechsdk.ResultReason.NoMatch:
         print("No speech could be recognized: {}".format(translation_recognition_result.no_match_details))
+        rttext = translation_recognition_result.no_match_details
     elif translation_recognition_result.reason == speechsdk.ResultReason.Canceled:
         cancellation_details = translation_recognition_result.cancellation_details
         print("Speech Recognition canceled: {}".format(cancellation_details.reason))
@@ -126,7 +130,7 @@ def main():
         options3 = st.selectbox('Output Voice language:',
                       ('ta-IN-PallaviNeural', 'en-US-AvaMultilingualNeural', 'en-US-EmmaNeural', 'en-US-BrandonNeural'))
 
-        audio_file = open("InboundSampleRecording.mp3", "rb")  
+        audio_file = open("Call3_separated_16k_pharmacy_call.wav", "rb")  
         audio_bytes = audio_file.read()     
 
         st.audio(audio_bytes)
