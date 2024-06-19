@@ -17,6 +17,7 @@ video_bytes = video_file.read()
 def translateaudio(option1, option2, audio_bytes, option3):
     
     rttext = ""
+    engrttext = ""
     #audio_io = io.BytesIO(audio_bytes)
     #audio_bytes.save("temp1.wav")
     with open("temp1.wav", "wb") as f:
@@ -55,6 +56,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
             target_language, 
             translation_recognition_result.translations[target_language]))
         #rttext = translation_recognition_result.text
+        engrttext = translation_recognition_result.text
         rttext = translation_recognition_result.translations[target_language]
         audio_config = speechsdk.audio.AudioOutputConfig(use_default_speaker=True)
 
@@ -107,7 +109,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
             print("Error details: {}".format(cancellation_details.error_details))
             print("Did you set the speech resource key and region values?")
             rttext = cancellation_details.error_details
-    return rttext, rsstream
+    return rttext, rsstream, engrttext
 
 
 def main():
@@ -117,6 +119,8 @@ def main():
     url1 = ""
     video_file = open(VIDEO_URL, 'rb')
     video_bytes = video_file.read()
+    displaytext = None
+    engrttext = None
 
     #st.video(video_bytes)
     with col1:
@@ -124,12 +128,12 @@ def main():
                       ('ta', 'en', 'es'))
         
         option2 = st.selectbox('Output Voice language:',
-                      ('ta-IN', 'en-US', 'es-ES', 'en-IN'))
+                      ('ta-IN', 'en-US', 'es-ES', 'en-IN', 'es-MX', 'es-US'))
         #st.video(video_bytes)
 
         options3 = st.selectbox('Output Voice language:',
-                      ('ta-IN-PallaviNeural', 'en-US-AvaMultilingualNeural', 'en-US-EmmaNeural', 'en-US-BrandonNeural'))
-
+                      ('ta-IN-PallaviNeural', 'en-US-AvaMultilingualNeural', 'en-US-EmmaNeural', 'en-US-BrandonNeural'
+                       ,'es-ES-AlvaroNeural', 'es-ES-AbrilNeural','es-MX-JorgeNeural','es-MX-DaliaNeural'))
         audio_file = open("Call3_separated_16k_pharmacy_call.wav", "rb")  
         audio_bytes = audio_file.read()     
 
@@ -142,17 +146,22 @@ def main():
             audio_bytes = uploaded_file.read()
             status = "Upload done"
             st.audio(audio_bytes)
-            displaytext, rsstream = translateaudio(option1, option2, audio_bytes, options3)
-            st.markdown(displaytext, unsafe_allow_html=True)
+            displaytext, rsstream, engrttext = translateaudio(option1, option2, audio_bytes, options3)
+            #st.markdown(displaytext, unsafe_allow_html=True)
             st.audio(rsstream)
 
         if st.button('Translate Sentence'):            
-            displaytext, rsstream = translateaudio(option1, option2, audio_bytes, options3)
+            displaytext, rsstream, engrttext = translateaudio(option1, option2, audio_bytes, options3)
             count += 1
             status = "Translation done"
 
-            st.markdown(displaytext, unsafe_allow_html=True)
+            #st.markdown(displaytext, unsafe_allow_html=True)
             st.audio(rsstream)
+    with col2:
+        if displaytext is not None:
+            st.markdown(displaytext, unsafe_allow_html=True)
+        if engrttext is not None:
+            st.markdown(engrttext, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
