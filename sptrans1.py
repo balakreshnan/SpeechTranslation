@@ -2,6 +2,8 @@ import streamlit as st
 import azure.cognitiveservices.speech as speechsdk
 from dotenv import dotenv_values
 import io
+import os
+from openai import AzureOpenAI
 
 config = dotenv_values("env.env")
 
@@ -18,6 +20,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
     
     rttext = ""
     engrttext = ""
+    whispertext = ""
     #audio_io = io.BytesIO(audio_bytes)
     #audio_bytes.save("temp1.wav")
     with open("temp1.wav", "wb") as f:
@@ -37,6 +40,31 @@ def translateaudio(option1, option2, audio_bytes, option3):
     target_language = option1
     speech_translation_config.add_target_language(target_language)
     #print('Audio bytes:', audio_bytes)
+
+    wclient = AzureOpenAI(
+        azure_endpoint = config["AZURE_OPENAI_ENDPOINT_WHISPER"], 
+        api_key=config["AZURE_OPENAI_KEY_WHISPER"],  
+        #api_version="2024-02-01"
+        #api_version="2024-05-01"
+        api_version="2024-05-01-preview"
+        )
+    
+    transcription = wclient.audio.transcriptions.create(
+        model="whisper",
+        file=open(audio_filename, "rb"),
+        #prompt="Transcribe the given audio file into Tamil language.",
+        language="ta",
+    )
+
+    translation = wclient.audio.translations.create(
+        model="whisper",
+        file=open(audio_filename, "rb"),
+        #prompt="Transcribe the given audio file into Tamil language.",
+    )
+
+
+    #https://learn.microsoft.com/en-us/answers/questions/233463/speech-service-only-30-seconds-of-audio-is-transcr
+    whispertext = transcription.text
 
     #audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
     #audio_config = speechsdk.audio.AudioConfig(stream=audio_bytes)
@@ -62,6 +90,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
 
         # The neural multilingual voice can speak different languages based on the input text.
         speech_config = speechsdk.SpeechConfig(subscription=speechkey, region=speechregion)
+        speech_config.set_property(speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, '1500000000')
         #speech_config.speech_synthesis_voice_name='en-US-AvaMultilingualNeural'
         speech_config.speech_synthesis_voice_name=option3
         #speech_config.speech_recognition_language='ta-IN'
@@ -70,6 +99,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
 
         speech_config.speech_recognition_language=option2
         speech_config.speech_synthesis_language=option2
+        
         
 
         #speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
@@ -82,6 +112,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
         
         #speech_synthesis_result = speech_synthesizer.speak_text_async(rttext).get()
         speech_synthesis_result = speech_synthesizer.speak_text(rttext)
+        #speech_synthesis_result = speech_synthesizer.speak.text(whispertext)
 
         #rsstream = speechsdk.AudioDataStream(speech_synthesis_result)
         rsstream = speech_synthesis_result.audio_data
@@ -109,7 +140,7 @@ def translateaudio(option1, option2, audio_bytes, option3):
             print("Error details: {}".format(cancellation_details.error_details))
             print("Did you set the speech resource key and region values?")
             rttext = cancellation_details.error_details
-    return rttext, rsstream, engrttext
+    return rttext, rsstream, engrttext, whispertext
 
 
 def main():
@@ -121,6 +152,7 @@ def main():
     video_bytes = video_file.read()
     displaytext = None
     engrttext = None
+    whispertext = None
 
     #st.video(video_bytes)
     with col1:
@@ -146,12 +178,12 @@ def main():
             audio_bytes = uploaded_file.read()
             status = "Upload done"
             st.audio(audio_bytes)
-            displaytext, rsstream, engrttext = translateaudio(option1, option2, audio_bytes, options3)
+            displaytext, rsstream, engrttext, whispertext = translateaudio(option1, option2, audio_bytes, options3)
             #st.markdown(displaytext, unsafe_allow_html=True)
             st.audio(rsstream)
 
         if st.button('Translate Sentence'):            
-            displaytext, rsstream, engrttext = translateaudio(option1, option2, audio_bytes, options3)
+            displaytext, rsstream, engrttext, whispertext = translateaudio(option1, option2, audio_bytes, options3)
             count += 1
             status = "Translation done"
 
@@ -162,6 +194,8 @@ def main():
             st.markdown(displaytext, unsafe_allow_html=True)
         if engrttext is not None:
             st.markdown(engrttext, unsafe_allow_html=True)
+        if whispertext is not None:
+            st.markdown(whispertext, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
