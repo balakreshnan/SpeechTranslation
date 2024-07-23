@@ -78,11 +78,11 @@ def translateaudio(option1, option2, option3, text1):
                 print("Error details: {}".format(cancellation_details.error_details))
                 print("Did you set the speech resource key and region values?")
 
-    return rttext, rsstream, engrttext, whispertext
+    return text1, rsstream, engrttext, whispertext
 
 def main():
     count = 0
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1,2])
     status = None
     url1 = ""
     video_file = open(VIDEO_URL, 'rb')
@@ -90,6 +90,7 @@ def main():
     displaytext = None
     engrttext = None
     whispertext = None
+    rsstream = None
 
     #st.video(video_bytes)
     with col1:
@@ -117,14 +118,14 @@ def main():
                 Press 1 to repeat this information. 
                 Press * to return to the previous menu.""")
         option1 = st.selectbox('Translate to Lanugage:',
-                      ('ta', 'en', 'es'))
+                      ('en', 'es', 'ta'))
         
         option2 = st.selectbox('Output Voice language:',
-                      ('ta-IN', 'en-US', 'es-ES', 'en-IN', 'es-MX', 'es-US'))
+                      ('en-US', 'es-ES', 'en-IN', 'es-MX', 'es-US', 'ta-IN'))
         #st.video(video_bytes)
 
         options3 = st.selectbox('Output Voice language:',
-                      ('ta-IN-PallaviNeural', 'en-US-AvaMultilingualNeural', 'en-US-EmmaNeural', 'en-US-BrandonNeural'
+                      ( 'en-US-AvaMultilingualNeural', 'en-US-EmmaNeural', 'en-US-BrandonNeural'
                        ,'es-ES-AlvaroNeural', 'es-ES-AbrilNeural','es-MX-JorgeNeural','es-MX-DaliaNeural',
                        'en-US-AvaNeural', 'en-US-AndrewNeural', 'en-US-EmmaNeural', 'en-US-BrianNeural',
                        'en-US-JennyNeural', 'en-US-GuyNeural', 'en-US-AriaNeural', 'en-US-DavisNeural',
@@ -138,7 +139,7 @@ def main():
                        'es-MX-DaliaNeural', 'es-MX-JorgeNeural', 'es-MX-BeatrizNeural', 'es-MX-CandelaNeural',
                        'es-MX-CarlotaNeural', 'es-MX-CecilioNeural', 'es-MX-GerardoNeural', 'es-MX-LarissaNeural',
                        'es-MX-LibertoNeural', 'es-MX-LucianoNeural', 'es-MX-MarinaNeural', 'es-MX-NuriaNeural',
-                       'es-MX-PelayoNeural', 'es-MX-RenataNeural', 'es-MX-YagoNeural') 
+                       'es-MX-PelayoNeural', 'es-MX-RenataNeural', 'es-MX-YagoNeural', 'ta-IN-PallaviNeural') 
                        )
         #audio_file = open("Call3_separated_16k_pharmacy_call.wav", "rb")  
         #audio_bytes = audio_file.read()     
@@ -152,13 +153,16 @@ def main():
             status = "Translation done"
 
             #st.markdown(displaytext, unsafe_allow_html=True)
-            st.audio(rsstream)
+            #st.audio(rsstream)
     with col2:
-        if displaytext is not None:
+        if rsstream:
+            st.audio(rsstream)
+        if displaytext:
             st.markdown(displaytext, unsafe_allow_html=True)
-        if engrttext is not None:
+            #st.write(displaytext)
+        if engrttext:
             st.markdown(engrttext, unsafe_allow_html=True)
-        if whispertext is not None:
+        if whispertext:
             st.markdown(whispertext, unsafe_allow_html=True)
 
 if __name__ == "__main__":
