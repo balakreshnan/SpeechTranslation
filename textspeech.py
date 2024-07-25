@@ -4,6 +4,9 @@ from dotenv import dotenv_values
 import io
 import os
 from openai import AzureOpenAI
+from azure.ai.translation.text import TextTranslationClient, TranslatorCredential
+from azure.ai.translation.text.models import InputTextItem
+from azure.core.exceptions import HttpResponseError
 
 config = dotenv_values("env.env")
 
@@ -80,11 +83,48 @@ def translateaudio(option1, option2, option3, text1):
 
     return text1, rsstream, engrttext, whispertext
 
+def translatetext(option1, option2, option3, text1):
+    returntext = ""
+
+    TRANSLATOR_ENDPOINT=config["TRANSLATOR_ENDPOINT"]
+    TRANSLATOR_KEY=config["TRANSLATOR_KEY"]
+    TRANSLATOR_REGION=config["TRANSLATOR_REGION"]
+
+    # Create a translation client
+
+    key = TRANSLATOR_KEY
+    endpoint = TRANSLATOR_ENDPOINT
+    region = TRANSLATOR_REGION
+
+    credential = TranslatorCredential(key, region)
+    text_translator = TextTranslationClient(endpoint=endpoint, credential=credential)
+
+    try:
+        source_language = "en"
+        target_languages = [option1]
+        input_text_elements = [ InputTextItem(text = text1) ]
+
+        response = text_translator.translate(content = input_text_elements, to = target_languages, from_parameter = source_language)
+        translation = response[0] if response else None
+
+        if translation:
+            for translated_text in translation.translations:
+                print(f"Text was translated to: '{translated_text.to}' and the result is: '{translated_text.text}'.")
+                returntext = translated_text.text
+
+    except HttpResponseError as exception:
+        print(f"Error Code: {exception.error.code}")
+        print(f"Message: {exception.error.message}")
+
+    return returntext
+
+
 def main():
     count = 0
     col1, col2 = st.columns([1,2])
     status = None
     url1 = ""
+    translatedtext = ""
     video_file = open(VIDEO_URL, 'rb')
     video_bytes = video_file.read()
     displaytext = None
@@ -151,15 +191,19 @@ def main():
             displaytext, rsstream, engrttext, whispertext = translateaudio(option1, option2, options3, text1)
             count += 1
             status = "Translation done"
+            translatedtext = translatetext(option1, option2, options3, text1)
+            print("Translated text: ", translatetext)
 
             #st.markdown(displaytext, unsafe_allow_html=True)
             #st.audio(rsstream)
     with col2:
         if rsstream:
             st.audio(rsstream)
+        if translatedtext:
+            st.markdown(translatedtext, unsafe_allow_html=True)
         if displaytext:
             st.markdown(displaytext, unsafe_allow_html=True)
-            #st.write(displaytext)
+            #st.write(displaytext)            
         if engrttext:
             st.markdown(engrttext, unsafe_allow_html=True)
         if whispertext:

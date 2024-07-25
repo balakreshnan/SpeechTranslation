@@ -2,3 +2,4 @@ openai
 python-dotenv
 azure-cognitiveservices-speech
 streamlit
+azure-ai-translation-text==1.0.0b1
